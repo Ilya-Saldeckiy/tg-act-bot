@@ -1,4 +1,5 @@
 from pathlib import Path
+from fastapi import File
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.types import TypeDecorator, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -35,13 +36,22 @@ class JSONEncodedDict(TypeDecorator):
         return json.loads(value)  # Десериализация JSON
 
 
+class Users(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    tg_id = Column(Integer, nullable=False, index=True)
+    
+
 # Определяем модель для базы данных
 class ItemDB(Base):
     __tablename__ = "items"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    tg_id = Column(Integer, index=True)
+    title = Column(String, nullable=True)
     description = Column(String, nullable=True)
-    data_obj = Column(JSONEncodedDict, nullable=True) 
+    data_obj = Column(JSONEncodedDict, nullable=True)
+    file_path = Column(String, nullable=True)
 
 
 # Создание таблиц
