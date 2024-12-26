@@ -3,7 +3,7 @@ from typing import Union
 from sqlalchemy import desc, exists
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from core.models import ItemDB, SessionLocal
+from core.models import ItemDB, Users, SessionLocal
 from PIL import Image
 from pathlib import Path
 from textwrap import wrap
@@ -41,6 +41,42 @@ class Item(BaseModel):
     
     class Config:
         orm_mode = True
+        
+
+class User(BaseModel):
+    id: int | None = None
+    tg_id: int | None = None
+    full_name: str | None = None
+    
+    class Config:
+        orm_mode = True
+        
+
+@app.get("/check_user/{tg_id}")
+def check_user(tg_id: int, db: Session = Depends(get_db)) -> None:
+    user = db.query(Users).filter(Users.tg_id == tg_id).first()
+    
+    return user if user else None
+
+
+@app.post("/create_user/", response_model=User)
+def create_user(users: User, db: Session = Depends(get_db)) -> None:
+    
+    last_user = db.query(Users).order_by(Users.id.desc()).first()
+    user_id = (last_user.id if last_user else 0) + 1
+    
+    db_user = Users(
+        id=user_id,
+        tg_id=users.tg_id,
+        full_name=users.full_name
+    )
+    
+    # Сохраняем в базе данных
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
 
 
 @app.post("/create_act/", response_model=Item)
@@ -82,15 +118,43 @@ def update_docx_file_path(item: Item, db: Session = Depends(get_db)) -> None:
     return {"file_path": db_item.file_path}
 
 
+@app.get("/all-acts/")
+def get_all_acts(db: Session = Depends(get_db)):
+    acts = db.query(ItemDB).filter(ItemDB.file_path.isnot(None)).all()
+    return acts if acts else None
+
+
+@app.delete("/delete-act/{act_id}")
+def delete_act(act_id: int, db: Session = Depends(get_db)):
+    act = db.query(ItemDB).filter(ItemDB.id == act_id).first()
+    
+    if not act:
+        return {"message": "АКТ не был удалён", "id": act_id}
+    
+    db.delete(act)
+    db.commit()
+    
+    remaining_acts = db.query(ItemDB).order_by(ItemDB.id).all()
+    for idx, act in enumerate(remaining_acts, start=1):
+        act.id = idx
+        db.add(act)
+    
+    db.commit()
+    
+    return {"message": "АКТ удалён", "id": act_id}
+
+
 @app.get("/last_act_id/")
 def last_act_id(db: Session = Depends(get_db)):
     last_record = db.query(ItemDB).order_by(desc(ItemDB.id)).first()
     return last_record.id if last_record else None
     
 
-@app.get("/send_file/{act_id}")
-def read_root(act_id: int, db: Session = Depends(get_db)):
+@app.get("/get-file-path/{act_id}")
+def get_file_path(act_id: int, db: Session = Depends(get_db)):
     data_obj = db.query(ItemDB).filter(ItemDB.id == act_id).first()
+    
+    print('data_obj')
     
     return {"file_path": data_obj.file_path}
 

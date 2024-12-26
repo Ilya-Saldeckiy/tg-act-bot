@@ -36,13 +36,8 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
 
             user_data[user_id][iteration_id]["photos"].append(str(file_path))
 
-            await message.answer(
-                f"Картинка сохранена! {f'Описание: {caption}' if caption else ''}"
-            )
-
         elif message.content_type == ContentType.TEXT:
             user_data[user_id][iteration_id]["texts"].append(message.text)
-            await message.answer("Текст сохранён!")
 
         if user_data[user_id][iteration_id]["photos"] or user_data[user_id][iteration_id]["texts"]:
             task_done.set()
@@ -51,10 +46,6 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
 
     try:
         await task_done.wait()
-
-        if not user_data[user_id][iteration_id]["photos"] and not user_data[user_id][iteration_id]["texts"]:
-            await bot.send_message(user_id, "Для создания акта необходимо загрузить хотя бы одно фото или написать текст.")
-            return None
 
         return user_data
 
@@ -88,7 +79,7 @@ async def set_title_act(user_id: int, bot, dp):
         dp.sub_routers.remove(router)
         
         
-async def send_file(callback_query: types.CallbackQuery, file_path: str,):
+async def send_file(callback_query: types.CallbackQuery, file_path: str, menu: bool = True):
     """
     Отправляет файл в ответ на callback-запрос.
 
@@ -138,8 +129,6 @@ async def change_file(bot, dp):
             file_path = ACTS_DIR / file_name
                         
             await bot.download_file(file.file_path, destination=file_path)
-
-            await message.answer("Файл заменён!")
 
         if os.path.exists(file_path):
             task_done.set()

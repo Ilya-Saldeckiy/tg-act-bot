@@ -1,5 +1,6 @@
 from pathlib import Path
 from fastapi import File
+from numpy import full
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.types import TypeDecorator, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -39,8 +40,8 @@ class JSONEncodedDict(TypeDecorator):
 class Users(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
     tg_id = Column(Integer, nullable=False, index=True)
+    full_name = Column(String, nullable=False, index=True)
     
 
 # Определяем модель для базы данных

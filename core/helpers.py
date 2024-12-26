@@ -8,7 +8,7 @@ from reportlab.lib import fonts
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from PIL import Image, ImageSequence
+from PIL import Image
 from sqlalchemy.orm import Session
 
 from docx import Document
@@ -33,7 +33,7 @@ def load_env_file(file_path: str):
 
 
 def create_docx_file(user_id: int, db: Session = None):
-    from core.models import ItemDB
+    from core.models import ItemDB, Users
     ACTS_DIR = Path("acts")
     ACTS_DIR.mkdir(exist_ok=True)
     
@@ -57,7 +57,14 @@ def create_docx_file(user_id: int, db: Session = None):
     current_datetime = datetime.datetime.now()
     current_date = current_datetime.strftime("%m/%d/%Y")
     current_time = current_datetime.strftime("%H:%M")
-    title = f"АКТ №{current_datetime.strftime('%d%m')}АЛ{data.id if data.id >= 10 else '0' + str(data.id)} {data.title if data.title else 'НАЗВАНИЕ АКТА'}"
+    
+    current_user = db.query(Users).filter(Users.tg_id == user_id).first()    
+    current_user_full_name = current_user.full_name
+    
+    if current_user_full_name:
+        name_for_act = ''.join(word[0] for word in current_user_full_name.split()[:2])
+
+    title = f"АКТ №{current_datetime.strftime('%d%m')}{name_for_act if name_for_act else "ХХ"}{data.id if data.id >= 10 else '0' + str(data.id)} {data.title if data.title else 'НАЗВАНИЕ АКТА'}"
 
     heading = doc.add_paragraph()
     heading_run = heading.add_run(title)
@@ -119,8 +126,7 @@ def create_docx_file(user_id: int, db: Session = None):
     # Сохранение документа
     filename = title + ".docx"
     file_path = ACTS_DIR / filename
-    file_path = file_path.resolve()
-
+    
     doc.save(file_path)
 
     # Сохранение пути в базе данных
