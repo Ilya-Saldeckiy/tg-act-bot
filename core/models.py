@@ -1,14 +1,12 @@
 from pathlib import Path
-from fastapi import File
-from numpy import full
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.types import TypeDecorator, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from os import getenv
-import json
-
 from core.helpers import load_env_file
+
+import json
 
 env_path = Path('.') / '.env'
 load_env_file(env_path)
@@ -53,6 +51,7 @@ class ItemDB(Base):
     description = Column(String, nullable=True)
     data_obj = Column(JSONEncodedDict, nullable=True)
     file_path = Column(String, nullable=True)
+    file_path_pdf = Column(String, nullable=True)
 
 
 # Создание таблиц

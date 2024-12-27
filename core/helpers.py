@@ -16,6 +16,8 @@ from docx.shared import Pt, RGBColor
 from docx.shared import Inches
 from docx.enum.text import WD_BREAK
 
+import subprocess
+
 
 def load_env_file(file_path: str):
     if not file_path.is_file():
@@ -30,17 +32,19 @@ def load_env_file(file_path: str):
             
             key, value = line.split('=', 1)
             os.environ[key] = value
+            
+
+def convert_docx_to_pdf(input_file, output_dir):
+    subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, input_file])
+    output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.pdf')
+    
+    return output_file
 
 
 def create_docx_file(user_id: int, db: Session = None):
     from core.models import ItemDB, Users
     ACTS_DIR = Path("acts")
     ACTS_DIR.mkdir(exist_ok=True)
-    
-    def hex_to_rgb(hex_color):
-        """Конвертирует цвет в формате #RRGGBB в значения RGB."""
-        hex_color = hex_color.lstrip('#')  # Убираем символ #
-        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
     data_obj = db.query(ItemDB).filter(ItemDB.tg_id == user_id).all()
     
@@ -131,8 +135,11 @@ def create_docx_file(user_id: int, db: Session = None):
 
     # Сохранение пути в базе данных
     if os.path.exists(file_path):
-        db.query(ItemDB).filter(ItemDB.id == data.id).update({"file_path": str(file_path)})
+        
+        file_path_pdf = convert_docx_to_pdf(str(file_path), "acts/")
+        db.query(ItemDB).filter(ItemDB.id == data.id).update({"file_path": str(file_path), "file_path_pdf": str(file_path_pdf)})
         db.commit()
+        
         return str(file_path)
     else:
         return None

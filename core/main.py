@@ -38,6 +38,7 @@ class Item(BaseModel):
     description: str | None = None
     data_obj: dict | None = {}
     file_path: str | None = None
+    file_path_pdf: str | None = None
     
     class Config:
         orm_mode = True
@@ -106,13 +107,16 @@ def create_act(item: Item, db: Session = Depends(get_db)):
 
 @app.post("/update_docx_file/")
 def update_docx_file_path(item: Item, db: Session = Depends(get_db)) -> None:
+    from core.helpers import convert_docx_to_pdf
     
     db_item = ItemDB(
         id=item.id,
-        file_path=item.file_path
+        file_path=item.file_path,
     )
     
-    db.query(ItemDB).filter(ItemDB.id == db_item.id).update({"file_path": db_item.file_path})
+    file_path_pdf = convert_docx_to_pdf(str(db_item.file_path), "acts/")
+    
+    db.query(ItemDB).filter(ItemDB.id == db_item.id).update({"file_path": db_item.file_path, "file_path_pdf": file_path_pdf})
     db.commit()
     
     return {"file_path": db_item.file_path}
@@ -153,10 +157,7 @@ def last_act_id(db: Session = Depends(get_db)):
 @app.get("/get-file-path/{act_id}")
 def get_file_path(act_id: int, db: Session = Depends(get_db)):
     data_obj = db.query(ItemDB).filter(ItemDB.id == act_id).first()
-    
-    print('data_obj')
-    
-    return {"file_path": data_obj.file_path}
+    return {"file_path": data_obj.file_path, "file_path_pdf": data_obj.file_path_pdf}
 
 
 @app.get("/items/{item_id}")

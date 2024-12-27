@@ -1,4 +1,3 @@
-from io import BytesIO
 from aiogram.types import ContentType
 from aiogram import types, Router
 from aiogram.types import ContentType

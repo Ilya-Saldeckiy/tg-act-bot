@@ -1,14 +1,10 @@
 import sys, aiohttp
 from pathlib import Path
 
-from httpx import delete
-from watchfiles import awatch
-
 sys.path.append(str(Path(__file__).parent.parent))
 from handlers import create_act, set_title_act, send_file, change_file
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
-from aiogram.types import ContentType
 from pathlib import Path
 from os import getenv
 from core.helpers import load_env_file
@@ -45,7 +41,8 @@ print("BOT запущен")
 # Создаём кнопки
 button1 = types.InlineKeyboardButton(text="Создать АКТ", callback_data="create_act")
 button2 = types.InlineKeyboardButton(text="Хранилище актов", callback_data="storage_acts:0")
-button_send_file = types.InlineKeyboardButton(text="Скачать АКТ", callback_data="send_file")
+button_send_file = types.InlineKeyboardButton(text="Скачать АКТ в DOCX", callback_data="send_file:docx")
+button_send_file_pdf = types.InlineKeyboardButton(text="Скачать АКТ в PDF", callback_data="send_file:pdf")
 go_to_start = types.InlineKeyboardButton(text="Вернуться в меню", callback_data="go_to_start")
 
 button_create_act_continue = types.InlineKeyboardButton(text="Добавить элемент в акт?", callback_data="create_act_continue")
@@ -65,7 +62,10 @@ def create_storage_keyboard(item_id, act_name, page):
                 button_upload_changed_act,
                 types.InlineKeyboardButton(text="Удалить АКТ", callback_data=f"delete_act:{item_id}:{act_name}"),
             ],
-            [button_send_file],
+            [
+                button_send_file,
+                button_send_file_pdf
+            ],
             [
                 types.InlineKeyboardButton(text="Вернуться в хранилище", callback_data=f"storage_acts:{page}"),
                 types.InlineKeyboardButton(text="Вернуться в меню", callback_data="go_to_start"),
@@ -130,7 +130,7 @@ async def process_full_name(message: types.Message, state: FSMContext):
         if user:
             await message.answer("ФИО успешно сохранено!")
             await state.clear()
-            await message.answer("Выберите действие", reply_markup=keyboard)
+            await message.answer("Выберите действие", reply_markup=keyboard_main)
         else:
             await message.answer("Ошибка при сохранении. Попробуйте ещё раз.")
     else:
@@ -264,12 +264,6 @@ async def go_to_start(callback_query: types.CallbackQuery):
 async def handle_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
 
-    # if callback_query.data == "go_to_start":
-    #     user_data[user_id] = {}
-
-    #     await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
-    #     await callback_query.message.answer("Выбери действие", reply_markup=keyboard_main)
-
     if callback_query.data.startswith("storage_acts"):
 
         _, page_number = callback_query.data.split(":")
@@ -335,14 +329,20 @@ async def handle_callback(callback_query: types.CallbackQuery):
                 except aiohttp.ClientError as e:
                     await callback_query.message.answer(f"Ошибка сети: {e}")
                     return False
-    elif callback_query.data == "send_file":
+    elif callback_query.data.startswith("send_file"):
         await callback_query.message.delete()
+        
+        _, file_format = callback_query.data.split(":")
 
         act_id = act_id_storage.get("id", None)
         act_data = await fetch_data(f"get-file-path/{act_id}")
 
         if act_data:
-            file_path = act_data.get("file_path")
+            file_path = act_data.get("file_path_pdf") if str(file_format) == "pdf" else act_data.get("file_path")
+            
+            if not file_path:
+                await callback_query.message.answer("Не найден акт для скачивания.")
+                await process_go_to_start(callback_query.message)
 
             if file_path:
                 await send_file(callback_query, file_path)
@@ -368,7 +368,6 @@ async def handle_callback(callback_query: types.CallbackQuery):
                     await process_go_to_start(callback_query.message, inline_keyboard)
 
     elif callback_query.data == "upload_changed_act":
-        # await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
         await callback_query.message.delete()
         await callback_query.message.answer("Загрузите изменённый АКТ")
         new_file_path = await change_file(bot, dp)
