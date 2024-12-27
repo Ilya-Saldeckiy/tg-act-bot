@@ -13,6 +13,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types.callback_query import CallbackQuery
@@ -180,8 +182,10 @@ def get_pagination_keyboard(page: int, ITEMS_PER_PAGE: int, items: list) -> type
             # Обрезаем file_path и добавляем уникальный ID
             file_name = file_path.replace("acts/", "")
             button_name = truncate_string(f"{item_id}. {file_name}")
+            
+            button_name_short = truncate_string(button_name, 30)
 
-            builder.row(types.InlineKeyboardButton(text=button_name, callback_data=str(f"item:{item_id}:{button_name}")))
+            builder.row(types.InlineKeyboardButton(text=button_name, callback_data=str(f"item:{item_id}:{button_name_short}")))
 
     # Кнопки навигации
     if page > 0:
@@ -233,7 +237,8 @@ async def delete_act_handler(callback_query: types.CallbackQuery):
             if response.status == 200:
                 storage_acts = await fetch_data("all-acts/")
                 keyboard = get_pagination_keyboard(page, 5, storage_acts)
-
+                
+                await callback_query.message.delete()
                 await callback_query.message.answer(f"Акт {act_name} успешно удален.", reply_markup=keyboard)
             else:
                 await callback_query.message.answer(f"Ошибка при удалении: {response.status}")
@@ -273,14 +278,19 @@ async def handle_callback(callback_query: types.CallbackQuery):
         storage_acts = await fetch_data("all-acts/")
 
         keyboard = get_pagination_keyboard(int(page_number), 5, storage_acts)
-        await callback_query.message.answer("Выберите АКТ для работы с ним:", reply_markup=keyboard)
+        
+        if keyboard:
+            await callback_query.message.answer("Выберите АКТ для работы с ним:", reply_markup=keyboard)
+        else:
+            await callback_query.message.answer("Хранилище пустое, нужно добавить акт.")
+            await process_go_to_start(callback_query.message)
 
     elif callback_query.data == "create_act":
 
         user_data[user_id] = {}
 
         await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
-        await callback_query.message.answer("Для создания акта напишите описание и прикрепите фотографии")
+        await callback_query.message.answer("Для создания акта нужно: Прикрепить картинку и написать текст или просто написать текст")
 
         result = await create_act(user_id, user_data, bot, dp)
 
