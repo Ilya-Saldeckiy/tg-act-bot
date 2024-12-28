@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 from handlers import create_act, set_title_act, send_file, change_file
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from pathlib import Path
 from os import getenv
@@ -12,8 +12,6 @@ from core.helpers import load_env_file
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
@@ -46,6 +44,7 @@ button2 = types.InlineKeyboardButton(text="Хранилище актов", callb
 button_send_file = types.InlineKeyboardButton(text="Скачать АКТ в DOCX", callback_data="send_file:docx")
 button_send_file_pdf = types.InlineKeyboardButton(text="Скачать АКТ в PDF", callback_data="send_file:pdf")
 go_to_start = types.InlineKeyboardButton(text="Вернуться в меню", callback_data="go_to_start")
+cancel_create = types.InlineKeyboardButton(text="Отменить создание", callback_data="go_to_start")
 
 button_create_act_continue = types.InlineKeyboardButton(text="Добавить элемент в акт?", callback_data="create_act_continue")
 button_save_create_act = types.InlineKeyboardButton(text="Сохранить АКТ", callback_data="button_save_create_act")
@@ -53,7 +52,7 @@ button_upload_changed_act = types.InlineKeyboardButton(text="Заменить А
 
 keyboard_main = types.InlineKeyboardMarkup(inline_keyboard=[[button1, button2]])
 keyboard_saved = types.InlineKeyboardMarkup(inline_keyboard=[[button_send_file, go_to_start]])
-keyboard_create_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_create_act_continue, button_save_create_act]])
+keyboard_create_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_create_act_continue, button_save_create_act], [cancel_create]])
 keyboard_upload_changed_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_upload_changed_act, go_to_start]])
 
 
@@ -139,23 +138,15 @@ async def process_full_name(message: types.Message, state: FSMContext):
         await message.answer("Некорректное ФИО. Убедитесь, что оно состоит из трёх слов и каждое начинается с заглавной буквы.")
 
 
-# Обработчик текстов
-# @dp.message(F.text)
-# async def handle_unexpected_text(message: types.Message):
-#     user_id = message.from_user.id
-
-#     if callback_state:
-
-#         if user_data.get(user_id):
-#             keyboard_state = keyboard_create_act
-#         else:
-#             keyboard_state = keyboard
-
-#         await message.answer("Пожалуйста, используйте кнопки для взаимодействия.", reply_markup=keyboard_state)
-
-
 class PaginationCallback(CallbackData, prefix="pagination"):
     page: int
+
+
+# Функция для обрезки строки
+def truncate_string(s: str, max_length: int = 60) -> str:
+    if len(s) > max_length:
+        return s[:max_length] + "..."
+    return s
 
 
 # Функция для формирования клавиатуры
@@ -166,12 +157,6 @@ def get_pagination_keyboard(page: int, ITEMS_PER_PAGE: int, items: list) -> type
     start = page * ITEMS_PER_PAGE
     end = start + ITEMS_PER_PAGE
     current_items = items[start:end]
-
-    # Функция для обрезки строки
-    def truncate_string(s: str, max_length: int = 60) -> str:
-        if len(s) > max_length:
-            return s[:max_length] + "..."
-        return s
 
     # Добавляем кнопки с элементами
     for item in current_items:
@@ -363,10 +348,12 @@ async def handle_callback(callback_query: types.CallbackQuery):
 
                     page = int(act_id) // 5 - 1 if int(act_id) % 5 == 0 else int(act_id) // 5
 
+                    button_name_short = truncate_string(f"item:{act_id}:{act_id}. {file_path.replace("acts/", "")}", 30)
+
                     inline_keyboard = [
                         [
                             types.InlineKeyboardButton(
-                                text="Вернуться к акту", callback_data=f"item:{act_id}:{act_id}. {file_path.replace("acts/", "")}"
+                                text="Вернуться к акту", callback_data=button_name_short
                             )
                         ],
                         [
