@@ -1,22 +1,11 @@
 from fastapi import FastAPI, Depends
 from typing import Union
-from sqlalchemy import desc, exists
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from core.models import ItemDB, Users, SessionLocal
-from PIL import Image
-from pathlib import Path
-from textwrap import wrap
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 
 from core.helpers import create_pdf_file, create_docx_file
-
-import os
-
-import datetime
 
 app = FastAPI()
 

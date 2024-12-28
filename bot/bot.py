@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 from handlers import create_act, set_title_act, send_file, change_file
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
 from pathlib import Path
 from os import getenv
@@ -12,6 +12,8 @@ from core.helpers import load_env_file
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters.callback_data import CallbackData
@@ -52,8 +54,9 @@ button_upload_changed_act = types.InlineKeyboardButton(text="Заменить А
 
 keyboard_main = types.InlineKeyboardMarkup(inline_keyboard=[[button1, button2]])
 keyboard_saved = types.InlineKeyboardMarkup(inline_keyboard=[[button_send_file, go_to_start]])
-keyboard_create_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_create_act_continue, button_save_create_act], [cancel_create]])
+keyboard_create_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_create_act_continue, button_save_create_act]])
 keyboard_upload_changed_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_upload_changed_act, go_to_start]])
+keyboard_create_act = types.InlineKeyboardMarkup(inline_keyboard=[[button_create_act_continue, button_save_create_act], [cancel_create]])
 
 
 def create_storage_keyboard(item_id, act_name, page):
@@ -136,6 +139,21 @@ async def process_full_name(message: types.Message, state: FSMContext):
             await message.answer("Ошибка при сохранении. Попробуйте ещё раз.")
     else:
         await message.answer("Некорректное ФИО. Убедитесь, что оно состоит из трёх слов и каждое начинается с заглавной буквы.")
+
+
+# Обработчик текстов
+# @dp.message(F.text)
+# async def handle_unexpected_text(message: types.Message):
+#     user_id = message.from_user.id
+
+#     if callback_state:
+
+#         if user_data.get(user_id):
+#             keyboard_state = keyboard_create_act
+#         else:
+#             keyboard_state = keyboard
+
+#         await message.answer("Пожалуйста, используйте кнопки для взаимодействия.", reply_markup=keyboard_state)
 
 
 class PaginationCallback(CallbackData, prefix="pagination"):

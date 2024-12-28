@@ -1,0 +1,9 @@
+version: '1.0'
+
+services:
+  fastapi:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
