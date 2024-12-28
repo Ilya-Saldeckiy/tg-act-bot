@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from core.models import ItemDB, Users, SessionLocal
 
-from core.helpers import create_pdf_file, create_docx_file
+from core.helpers import create_docx_file
 
 app = FastAPI()
 
@@ -147,8 +147,3 @@ def last_act_id(db: Session = Depends(get_db)):
 def get_file_path(act_id: int, db: Session = Depends(get_db)):
     data_obj = db.query(ItemDB).filter(ItemDB.id == act_id).first()
     return {"file_path": data_obj.file_path, "file_path_pdf": data_obj.file_path_pdf}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}

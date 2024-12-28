@@ -1,9 +1,30 @@
 version: '1.0'
 
 services:
-  fastapi:
+  # Сервис для backend
+  backend:
     build: .
+    container_name: backend
+    volumes:
+      - .:/app
+    command: fastapi run core/main.py
     ports:
       - "8000:8000"
-    environment:
-      - ENV=production
+    networks:
+      - app-network
+
+  # Сервис для бота
+  bot:
+    build: .
+    container_name: bot
+    volumes:
+      - .:/app
+    command: python3 bot/bot.py
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
