@@ -1,4 +1,9 @@
-/.history/*
+/.idea/
+/.vscode/*
+/.history/
 /.photos/*
-/venv/*
+__pycache
+/venv/
 *.db
+.env
+*Zone.Identifier

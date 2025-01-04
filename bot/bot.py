@@ -139,21 +139,6 @@ async def process_full_name(message: types.Message, state: FSMContext):
         await message.answer("Некорректное ФИО. Убедитесь, что оно состоит из трёх слов и каждое начинается с заглавной буквы.")
 
 
-# Обработчик текстов
-# @dp.message(F.text)
-# async def handle_unexpected_text(message: types.Message):
-#     user_id = message.from_user.id
-
-#     if callback_state:
-
-#         if user_data.get(user_id):
-#             keyboard_state = keyboard_create_act
-#         else:
-#             keyboard_state = keyboard
-
-#         await message.answer("Пожалуйста, используйте кнопки для взаимодействия.", reply_markup=keyboard_state)
-
-
 class PaginationCallback(CallbackData, prefix="pagination"):
     page: int
 
@@ -182,7 +167,7 @@ def get_pagination_keyboard(page: int, ITEMS_PER_PAGE: int, items: list) -> type
         if file_path:
             # Обрезаем file_path и добавляем уникальный ID
             file_name = file_path.replace("acts/", "")
-            button_name = truncate_string(f"{item_id}. {file_name}")
+            button_name = truncate_string(f"{item_id}. {file_name}", 30)
             
             button_name_short = truncate_string(button_name, 30)
 
@@ -220,9 +205,11 @@ async def item_handler(callback_query: types.CallbackQuery):
     page = int(item_id) // 5 - 1 if int(item_id) % 5 == 0 else int(item_id) // 5
     act_id_storage["id"] = item_id
     send_file_menu["status"] = False
-
-    storage_keyboard = create_storage_keyboard(item_id, item_name, page)
-
+    
+    short_item_name = truncate_string(item_name, 25)
+    
+    storage_keyboard = create_storage_keyboard(item_id, short_item_name, page)
+    
     await callback_query.message.answer(f"Вы выбрали: {item_name}\nЧто нужно сделать?", reply_markup=storage_keyboard)
 
 
