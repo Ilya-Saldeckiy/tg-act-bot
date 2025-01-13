@@ -11,8 +11,10 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
     PHOTOS_DIR = Path("photos")
     PHOTOS_DIR.mkdir(exist_ok=True)
 
+    if user_id not in user_data:
+        user_data[user_id] = {}
+
     iteration_id = len(user_data.get(user_id, {})) + 1
-    user_data.setdefault(user_id, {})
     user_data[user_id][iteration_id] = {"texts": [], "photos": []}
 
     task_done = asyncio.Event()
