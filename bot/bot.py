@@ -250,6 +250,20 @@ async def process_go_to_start(message: types.Message, custom_menu: list = None):
 async def go_to_start(callback_query: types.CallbackQuery):
     await callback_query.message.delete()
     await process_go_to_start(callback_query.message)
+    
+    
+@dp.callback_query(lambda c: c.data == "create_act")
+async def go_to_start(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    user_data[user_id] = {}
+
+    await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
+    await callback_query.message.answer("Для создания акта нужно: Прикрепить картинку и написать текст или просто написать текст")
+
+    await create_act(user_id, user_data, bot, dp)
+
+    await callback_query.message.answer("Выбери действие", reply_markup=keyboard_create_act)
 
 
 # Обработка нажатий на кнопки
@@ -272,17 +286,6 @@ async def handle_callback(callback_query: types.CallbackQuery):
         else:
             await callback_query.message.answer("Хранилище пустое, нужно добавить акт.")
             await process_go_to_start(callback_query.message)
-
-    elif callback_query.data == "create_act":
-
-        user_data[user_id] = {}
-
-        await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
-        await callback_query.message.answer("Для создания акта нужно: Прикрепить картинку и написать текст или просто написать текст")
-
-        result = await create_act(user_id, user_data, bot, dp)
-
-        await callback_query.message.answer("Выбери действие", reply_markup=keyboard_create_act)
 
     elif callback_query.data == "create_act_continue":
 

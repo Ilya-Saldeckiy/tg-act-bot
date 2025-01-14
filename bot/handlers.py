@@ -20,9 +20,8 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
     task_done = asyncio.Event()
     router = Router()
 
-    @router.message()
+    @router.message(lambda message: message.from_user.id == user_id)
     async def handle_message(message: types.Message):
-        
         if message.content_type == ContentType.PHOTO:
             photo = message.photo[-1]
             file = await bot.get_file(photo.file_id)
@@ -47,9 +46,7 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
 
     try:
         await task_done.wait()
-
         return user_data
-
     finally:
         dp.sub_routers.remove(router)
         
