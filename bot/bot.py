@@ -373,7 +373,7 @@ async def handle_callback(callback_query: types.CallbackQuery):
     elif callback_query.data == "upload_changed_act":
         await callback_query.message.delete()
         await callback_query.message.answer("Загрузите изменённый АКТ")
-        new_file_path = await change_file(bot, dp)
+        new_file_path = await change_file(user_id, bot, dp)
 
         if new_file_path:
             async with aiohttp.ClientSession() as session:

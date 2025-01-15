@@ -105,7 +105,7 @@ async def send_file(callback_query: types.CallbackQuery, file_path: str, menu: b
         await callback_query.message.answer(f"Произошла ошибка: {e}")
     
         
-async def change_file(bot, dp):
+async def change_file(user_id: int, bot, dp):
     # Папка для сохранения фотографий
     ACTS_DIR = Path("acts")
 
@@ -114,7 +114,7 @@ async def change_file(bot, dp):
     
     file_path = None
 
-    @router.message()
+    @router.message(lambda message: message.from_user.id == user_id)
     async def handle_message(message: types.Message):
         nonlocal file_path
                 
@@ -124,22 +124,18 @@ async def change_file(bot, dp):
             file = await bot.get_file(document.file_id)
 
             file_name = f"{document.file_name}"
-            file_path = ACTS_DIR / file_name
+            file_path = str(ACTS_DIR / file_name)
                         
             await bot.download_file(file.file_path, destination=file_path)
 
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             task_done.set()
 
     dp.include_router(router)
 
     try:
         await task_done.wait()
-
-        if file_path:
-            return file_path
-        else:
-            return None
+        return file_path
 
     finally:
         dp.sub_routers.remove(router)

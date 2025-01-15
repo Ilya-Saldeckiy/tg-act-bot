@@ -1,8 +1,9 @@
 /.idea/
 /.vscode/*
 /.history/
-/.photos/*
-__pycache
+photos/*
+acts/*
+__pycache__
 /venv/
 *.db
 .env
