@@ -3,6 +3,9 @@ from aiogram import types, Router
 from aiogram.types import ContentType
 from pathlib import Path
 from aiogram.types import FSInputFile
+
+from core.utils.logger import Log, LogLevels
+
 import asyncio, os
 
 
@@ -103,6 +106,7 @@ async def send_file(callback_query: types.CallbackQuery, file_path: str, menu: b
         await callback_query.message.answer("Файл не найден. Попробуйте позже.")
     except Exception as e:
         await callback_query.message.answer(f"Произошла ошибка: {e}")
+        Log(f"Произошла ошибка: {e}", "handlers", LogLevels.ERROR)
     
         
 async def change_file(user_id: int, bot, dp):

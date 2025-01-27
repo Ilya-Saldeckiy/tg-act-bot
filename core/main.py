@@ -1,5 +1,4 @@
 from fastapi import FastAPI, Depends
-from typing import Union
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

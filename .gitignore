@@ -2,6 +2,7 @@
 /.vscode/*
 /.history/
 photos/*
+logs/*
 acts/*
 __pycache__
 /venv/

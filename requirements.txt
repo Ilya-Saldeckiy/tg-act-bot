@@ -5,4 +5,5 @@ python-docx~=1.1.2
 SQLAlchemy~=2.0.36
 requests~=2.32.3
 pillow~=11.0.0
+loguru~=0.7.3
 fastapi[standard]
