@@ -35,10 +35,20 @@ def main():
         print(f"{RED}{result}{END}")
         sys.exit(1)
 
+    print(f"{CYAN}!!! Синхронизация БД !!!{END}")
+
     dump_path = "./"
     success, result = exec_command(
         f"rsync -vz --progress -e ssh root@176.124.218.100:../home/tg-bot/tg-act-bot/db.sqlite3.db {dump_path}"
     )
+    if not success:
+        print(f"{RED}{result}{END}")
+        sys.exit(1)
+
+    print(f"{CYAN}!!! Выполняю миграции !!!{END}")
+    
+    success, result = exec_command("alembic upgrade head")
+    
     if not success:
         print(f"{RED}{result}{END}")
         sys.exit(1)

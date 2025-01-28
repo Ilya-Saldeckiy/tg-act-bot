@@ -54,18 +54,18 @@ async def create_act(user_id: int, user_data: dict, bot, dp):
         dp.sub_routers.remove(router)
         
 
-async def set_title_act(user_id: int, bot, dp):
+async def set_info_for_act(user_id: int, bot, dp):
     
     task_done = asyncio.Event()
     router = Router()
-    title_act = None
+    act_data = None
     
     @router.message()
     async def handle_message(message: types.Message):
-        nonlocal title_act
+        nonlocal act_data
         
         if message.content_type == ContentType.TEXT and len(message.text) > 1:
-            title_act = message.text
+            act_data = message.text
             task_done.set()
         else:
             await bot.send_message(user_id, "Для окончания сохранения нужно написать корректное название.")
@@ -74,7 +74,7 @@ async def set_title_act(user_id: int, bot, dp):
 
     try:
         await task_done.wait()
-        return str(title_act)
+        return str(act_data)
 
     finally:
         dp.sub_routers.remove(router)
