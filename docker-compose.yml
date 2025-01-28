@@ -7,7 +7,7 @@ services:
     container_name: backend
     volumes:
       - .:/app
-    command: fastapi run core/main.py
+    command: alembic upgrade head && fastapi run core/main.py
     ports:
       - "8000:8000"
     networks:
