@@ -16,7 +16,7 @@ COPY . /app
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD alembic upgrade head
+CMD ["sh", "-c", "alembic upgrade head"]
 
 # Открываем порт для приложения
 EXPOSE 8000
