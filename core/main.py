@@ -22,6 +22,9 @@ def get_db():
 class Item(BaseModel):
     id: int | None = None
     tg_id: int | None = None
+    object_name: str | None = None
+    project_name: str | None = None
+    company_name: str | None = None
     title: str | None = None
     description: str | None = None
     data_obj: dict | None = {}
@@ -78,6 +81,9 @@ def create_act(item: Item, db: Session = Depends(get_db)):
     db_item = ItemDB(
         id=act_id,
         tg_id=item.tg_id,
+        object_name=item.object_name,
+        project_name=item.project_name,
+        company_name=item.company_name,
         title=item.title,
         description=item.description,
         data_obj=item.data_obj

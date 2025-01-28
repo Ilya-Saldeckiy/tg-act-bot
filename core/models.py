@@ -47,6 +47,9 @@ class ItemDB(Base):
     __tablename__ = "items"
     id = Column(Integer, primary_key=True, index=True)
     tg_id = Column(Integer, index=True)
+    object_name = Column(String, nullable=True)
+    project_name = Column(String, nullable=True)
+    company_name = Column(String, nullable=True)
     title = Column(String, nullable=True)
     description = Column(String, nullable=True)
     data_obj = Column(JSONEncodedDict, nullable=True)

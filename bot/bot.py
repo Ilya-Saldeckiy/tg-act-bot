@@ -1,8 +1,9 @@
 import sys, aiohttp
+from turtle import st
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
-from handlers import create_act, set_title_act, send_file, change_file
+from handlers import create_act, set_info_for_act, send_file, change_file
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
 from pathlib import Path
@@ -353,16 +354,28 @@ async def callback_button_save_create_act(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     
     await callback_query.message.delete()
+    await callback_query.message.answer("Напишите название объекта")
+    
+    object_name = await set_info_for_act(user_id, bot, dp)
+    
+    await callback_query.message.answer("Напишите название проекта")
+    
+    project_name = await set_info_for_act(user_id, bot, dp)
+    
+    await callback_query.message.answer("Напишите название компании")
+    
+    company_name = await set_info_for_act(user_id, bot, dp)
+    
     await callback_query.message.answer("Напишите название акта")
 
-    title = await set_title_act(user_id, bot, dp)
+    title = await set_info_for_act(user_id, bot, dp)
 
     if title:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(
                     f"{getenv("URL")}/create_act/",
-                    json={"tg_id": str(user_id), "title": str(title), "data_obj": user_data.get(user_id, {})},
+                    json={"tg_id": str(user_id), "object_name": str(object_name), "project_name": str(project_name), "company_name": str(company_name), "title": str(title), "data_obj": user_data.get(user_id, {})},
                 ) as response:
                     if response.status == 200:
                         response_data = await response.json()
