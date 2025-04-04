@@ -20,7 +20,13 @@ from aiogram.types.callback_query import CallbackQuery
 
 from core.utils.logger import Log, LogLevels
 
+import logging
+
 import re, os, math
+
+# Настройка логгера
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Загружаем .env
 env_path = Path(".") / ".env"
@@ -115,7 +121,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     user = await fetch_data(f"check_user/{user_id}")
 
-    print(f"[DEBUG] user from fetch_data: {user}")
+    logger.debug(f"user from fetch_data: {user}")
 
     if not user:
         await message.answer("Представьтесь. Напишите своё ФИО.")
