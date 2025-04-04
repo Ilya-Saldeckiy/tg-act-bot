@@ -67,10 +67,7 @@ def create_storage_keyboard(item_id, act_name, page):
                 button_upload_changed_act,
                 types.InlineKeyboardButton(text="Удалить АКТ", callback_data=f"delete_act:{item_id}:{act_name}"),
             ],
-            [
-                button_send_file,
-                button_send_file_pdf
-            ],
+            [button_send_file, button_send_file_pdf],
             [
                 types.InlineKeyboardButton(text="Вернуться в хранилище", callback_data=f"storage_acts:{page}"),
                 types.InlineKeyboardButton(text="Вернуться в меню", callback_data="go_to_start"),
@@ -117,6 +114,8 @@ async def create_user_in_db(user_id: int, full_name: str) -> dict | None:
 async def send_welcome(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     user = await fetch_data(f"check_user/{user_id}")
+
+    print(f"[DEBUG] user from fetch_data: {user}")
 
     if not user:
         await message.answer("Представьтесь. Напишите своё ФИО.")
@@ -175,12 +174,7 @@ def get_pagination_keyboard(page: int, ITEMS_PER_PAGE: int, items: list, max_pag
         if file_path:
             file_name = file_path.replace("acts/", "")
             button_name = truncate_string(f"{item_id}. {file_name}", 30)
-            builder.row(
-                types.InlineKeyboardButton(
-                    text=button_name,
-                    callback_data=str(f"item:{item_id}:{button_name}")
-                )
-            )
+            builder.row(types.InlineKeyboardButton(text=button_name, callback_data=str(f"item:{item_id}:{button_name}")))
 
     # Добавляем кнопки для номеров страниц
     pagination_row = []
@@ -197,20 +191,14 @@ def get_pagination_keyboard(page: int, ITEMS_PER_PAGE: int, items: list, max_pag
 
     # Добавляем первую страницу, если нужно
     if start_page > 1:
-        pagination_row.append(
-            types.InlineKeyboardButton(text="1", callback_data=PaginationCallback(page=0).pack())
-        )
+        pagination_row.append(types.InlineKeyboardButton(text="1", callback_data=PaginationCallback(page=0).pack()))
 
     # Добавляем диапазон страниц
     for p in range(start_page, end_page + 1):
         if p == page + 1:
-            pagination_row.append(
-                types.InlineKeyboardButton(text=f"[{p}]", callback_data="ignore")
-            )
+            pagination_row.append(types.InlineKeyboardButton(text=f"[{p}]", callback_data="ignore"))
         else:
-            pagination_row.append(
-                types.InlineKeyboardButton(text=str(p), callback_data=PaginationCallback(page=p - 1).pack())
-            )
+            pagination_row.append(types.InlineKeyboardButton(text=str(p), callback_data=PaginationCallback(page=p - 1).pack()))
 
     # Добавляем последнюю страницу, если нужно
     if end_page < total_pages:
@@ -255,11 +243,11 @@ async def item_handler(callback_query: types.CallbackQuery):
     page = int(item_id) // 5 - 1 if int(item_id) % 5 == 0 else int(item_id) // 5
     act_id_storage["id"] = item_id
     send_file_menu["status"] = False
-    
+
     short_item_name = truncate_string(item_name, 25)
-    
+
     storage_keyboard = create_storage_keyboard(item_id, short_item_name, page)
-    
+
     await callback_query.message.answer(f"Вы выбрали: {item_name}\nЧто нужно сделать?", reply_markup=storage_keyboard)
 
 
@@ -275,7 +263,7 @@ async def delete_act_handler(callback_query: types.CallbackQuery):
             if response.status == 200:
                 storage_acts = await fetch_data("all-acts/")
                 keyboard = get_pagination_keyboard(page, 5, storage_acts)
-                
+
                 await callback_query.message.delete()
                 await callback_query.message.answer(f"Акт {act_name} успешно удален.", reply_markup=keyboard)
             else:
@@ -300,12 +288,12 @@ async def process_go_to_start(message: types.Message, custom_menu: list = None):
 async def callback_go_to_start(callback_query: types.CallbackQuery):
     await callback_query.message.delete()
     await process_go_to_start(callback_query.message)
-    
-    
+
+
 @dp.callback_query(lambda c: c.data == "create_act")
 async def callback_create_act(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     user_data[user_id] = {}
 
     await callback_query.message.edit_text(callback_query.message.text, reply_markup=None)
@@ -314,8 +302,8 @@ async def callback_create_act(callback_query: types.CallbackQuery):
     await create_act(user_id, user_data, bot, dp)
 
     await callback_query.message.answer("Выбери действие", reply_markup=keyboard_create_act)
-    
-    
+
+
 @dp.callback_query(lambda c: c.data.startswith("storage_acts"))
 async def callback_storage_acts(callback_query: types.CallbackQuery):
     _, page_number = callback_query.data.split(":")
@@ -325,18 +313,18 @@ async def callback_storage_acts(callback_query: types.CallbackQuery):
     storage_acts = await fetch_data("all-acts/")
 
     keyboard = get_pagination_keyboard(int(page_number), 5, storage_acts)
-    
+
     if keyboard:
         await callback_query.message.answer("Выберите АКТ для работы с ним:", reply_markup=keyboard)
     else:
         await callback_query.message.answer("Хранилище пустое, нужно добавить акт.")
         await process_go_to_start(callback_query.message)
-    
-    
+
+
 @dp.callback_query(lambda c: c.data == "create_act_continue")
 async def callback_create_act_continue(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     await callback_query.message.delete()
     await callback_query.message.answer("Продолжаем создание акта!")
 
@@ -347,25 +335,25 @@ async def callback_create_act_continue(callback_query: types.CallbackQuery):
         return
 
     await callback_query.message.answer("Выбери действие", reply_markup=keyboard_create_act)
-    
-    
+
+
 @dp.callback_query(lambda c: c.data == "button_save_create_act")
 async def callback_button_save_create_act(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     await callback_query.message.delete()
     await callback_query.message.answer("Напишите название объекта")
-    
+
     object_name = await set_info_for_act(user_id, bot, dp)
-    
+
     await callback_query.message.answer("Напишите название проекта")
-    
+
     project_name = await set_info_for_act(user_id, bot, dp)
-    
+
     await callback_query.message.answer("Напишите название компании")
-    
+
     company_name = await set_info_for_act(user_id, bot, dp)
-    
+
     await callback_query.message.answer("Напишите название акта")
 
     title = await set_info_for_act(user_id, bot, dp)
@@ -375,7 +363,14 @@ async def callback_button_save_create_act(callback_query: types.CallbackQuery):
             try:
                 async with session.post(
                     f"{getenv("URL")}/create_act/",
-                    json={"tg_id": str(user_id), "object_name": str(object_name), "project_name": str(project_name), "company_name": str(company_name), "title": str(title), "data_obj": user_data.get(user_id, {})},
+                    json={
+                        "tg_id": str(user_id),
+                        "object_name": str(object_name),
+                        "project_name": str(project_name),
+                        "company_name": str(company_name),
+                        "title": str(title),
+                        "data_obj": user_data.get(user_id, {}),
+                    },
                 ) as response:
                     if response.status == 200:
                         response_data = await response.json()
@@ -394,12 +389,12 @@ async def callback_button_save_create_act(callback_query: types.CallbackQuery):
             except aiohttp.ClientError as e:
                 await callback_query.message.answer(f"Ошибка сети: {e}")
                 return False
-    
-    
+
+
 @dp.callback_query(lambda c: c.data.startswith("send_file"))
-async def callback_send_file(callback_query: types.CallbackQuery):    
+async def callback_send_file(callback_query: types.CallbackQuery):
     await callback_query.message.delete()
-        
+
     _, file_format = callback_query.data.split(":")
 
     act_id = act_id_storage.get("id", None)
@@ -407,7 +402,7 @@ async def callback_send_file(callback_query: types.CallbackQuery):
 
     if act_data:
         file_path = act_data.get("file_path_pdf") if str(file_format) == "pdf" else act_data.get("file_path")
-        
+
         if not file_path:
             await callback_query.message.answer("Не найден акт для скачивания.")
             await process_go_to_start(callback_query.message)
@@ -424,11 +419,7 @@ async def callback_send_file(callback_query: types.CallbackQuery):
                 button_name_short = truncate_string(f"item:{act_id}:{act_id}. {file_path.replace("acts/", "")}", 30)
 
                 inline_keyboard = [
-                    [
-                        types.InlineKeyboardButton(
-                            text="Вернуться к акту", callback_data=button_name_short
-                        )
-                    ],
+                    [types.InlineKeyboardButton(text="Вернуться к акту", callback_data=button_name_short)],
                     [
                         types.InlineKeyboardButton(text="Вернуться в хранилище", callback_data=f"storage_acts:{page}"),
                         types.InlineKeyboardButton(text="Вернуться в меню", callback_data="go_to_start"),
@@ -436,12 +427,12 @@ async def callback_send_file(callback_query: types.CallbackQuery):
                 ]
 
                 await process_go_to_start(callback_query.message, inline_keyboard)
-    
-    
+
+
 @dp.callback_query(lambda c: c.data == "upload_changed_act")
 async def callback_upload_changed_act(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     await callback_query.message.delete()
     await callback_query.message.answer("Загрузите изменённый АКТ")
     new_file_path = await change_file(user_id, bot, dp)

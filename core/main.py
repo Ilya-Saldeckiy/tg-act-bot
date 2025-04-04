@@ -30,44 +30,40 @@ class Item(BaseModel):
     data_obj: dict | None = {}
     file_path: str | None = None
     file_path_pdf: str | None = None
-    
+
     class Config:
         orm_mode = True
-        
+
 
 class User(BaseModel):
     id: int | None = None
     tg_id: int | None = None
     full_name: str | None = None
-    
+
     class Config:
         orm_mode = True
-        
 
-@app.get("/check_user/{tg_id}")
+
+@app.get("/check_user/{tg_id}", response_model=User)
 def check_user(tg_id: int, db: Session = Depends(get_db)) -> None:
     user = db.query(Users).filter(Users.tg_id == tg_id).first()
-    
+
     return user if user else None
 
 
 @app.post("/create_user/", response_model=User)
 def create_user(users: User, db: Session = Depends(get_db)) -> None:
-    
+
     last_user = db.query(Users).order_by(Users.id.desc()).first()
     user_id = (last_user.id if last_user else 0) + 1
-    
-    db_user = Users(
-        id=user_id,
-        tg_id=users.tg_id,
-        full_name=users.full_name
-    )
-    
+
+    db_user = Users(id=user_id, tg_id=users.tg_id, full_name=users.full_name)
+
     # Сохраняем в базе данных
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
+
     return db_user
 
 
@@ -86,33 +82,33 @@ def create_act(item: Item, db: Session = Depends(get_db)):
         company_name=item.company_name,
         title=item.title,
         description=item.description,
-        data_obj=item.data_obj
+        data_obj=item.data_obj,
     )
 
     # Сохраняем в базе данных
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    
+
     create_docx_file(item.tg_id, db)
-    
+
     return db_item
 
 
 @app.post("/update_docx_file/")
 def update_docx_file_path(item: Item, db: Session = Depends(get_db)) -> None:
     from core.helpers import convert_docx_to_pdf
-    
+
     db_item = ItemDB(
         id=item.id,
         file_path=item.file_path,
     )
-    
+
     file_path_pdf = convert_docx_to_pdf(str(db_item.file_path), "acts/")
-    
+
     db.query(ItemDB).filter(ItemDB.id == db_item.id).update({"file_path": db_item.file_path, "file_path_pdf": file_path_pdf})
     db.commit()
-    
+
     return {"file_path": db_item.file_path}
 
 
@@ -125,20 +121,20 @@ def get_all_acts(db: Session = Depends(get_db)):
 @app.delete("/delete-act/{act_id}")
 def delete_act(act_id: int, db: Session = Depends(get_db)):
     act = db.query(ItemDB).filter(ItemDB.id == act_id).first()
-    
+
     if not act:
         return {"message": "АКТ не был удалён", "id": act_id}
-    
+
     db.delete(act)
     db.commit()
-    
+
     remaining_acts = db.query(ItemDB).order_by(ItemDB.id).all()
     for idx, act in enumerate(remaining_acts, start=1):
         act.id = idx
         db.add(act)
-    
+
     db.commit()
-    
+
     return {"message": "АКТ удалён", "id": act_id}
 
 
@@ -146,7 +142,7 @@ def delete_act(act_id: int, db: Session = Depends(get_db)):
 def last_act_id(db: Session = Depends(get_db)):
     last_record = db.query(ItemDB).order_by(desc(ItemDB.id)).first()
     return last_record.id if last_record else None
-    
+
 
 @app.get("/get-file-path/{act_id}")
 def get_file_path(act_id: int, db: Session = Depends(get_db)):
