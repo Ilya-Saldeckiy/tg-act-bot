@@ -15,25 +15,27 @@ def load_env_file(file_path: str):
     if not file_path.is_file():
         print(f"Файл {file_path} не найден.")
         return
-    
-    with open(file_path, 'r') as env_file:
+
+    with open(file_path, "r") as env_file:
         for line in env_file:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
-            
-            key, value = line.split('=', 1)
+
+            key, value = line.split("=", 1)
             os.environ[key] = value
-            
+
 
 def convert_docx_to_pdf(input_file, output_dir):
-    subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', '--outdir', output_dir, input_file])
-    output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + '.pdf')
-    
+    subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", output_dir, input_file])
+    output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(input_file))[0] + ".pdf")
+
     return output_file
 
 
-def add_paragraph(doc, text: str, font_size: int = 13, bold: bool = False, color: RGBColor = RGBColor(0, 0, 0), space_after: int = 15, alignment=None):
+def add_paragraph(
+    doc, text: str, font_size: int = 13, bold: bool = False, color: RGBColor = RGBColor(0, 0, 0), space_after: int = 15, alignment=None
+):
     """
     Добавляет абзац в документ с заданными параметрами.
     :param doc: Документ, в который добавляется абзац.
@@ -58,33 +60,34 @@ def add_paragraph(doc, text: str, font_size: int = 13, bold: bool = False, color
 
 def create_docx_file(user_id: int, db: Session = None):
     from core.models import ItemDB, Users
+
     ACTS_DIR = Path("acts")
     ACTS_DIR.mkdir(exist_ok=True)
 
     data_obj = db.query(ItemDB).filter(ItemDB.tg_id == user_id).all()
-    
+
     if data_obj:
         data = data_obj[-1]
 
     # Создание документа
     doc = Document()
-    style = doc.styles['Normal']
-    style.font.name = 'Times New Roman'  # Устанавливаем шрифт
+    style = doc.styles["Normal"]
+    style.font.name = "Times New Roman"  # Устанавливаем шрифт
     style.font.size = Pt(13)  # Устанавливаем размер шрифта
     style.font.color.rgb = RGBColor(0, 0, 0)  # Устанавливаем цвет текста (чёрный)
-    
+
     current_datetime = datetime.datetime.now()
-    current_date = current_datetime.strftime("%m/%d/%Y")
+    current_date = current_datetime.strftime("%d/%m/%Y")
     current_time = current_datetime.strftime("%H:%M")
-    
+
     current_user = db.query(Users).filter(Users.tg_id == user_id).first()
     current_user_full_name = current_user.full_name
-    
+
     if current_user_full_name:
-        name_for_act = ''.join(word[0] for word in current_user_full_name.split()[:2])
+        name_for_act = "".join(word[0] for word in current_user_full_name.split()[:2])
 
     title = f"АКТ №{current_datetime.strftime('%d%m')}{name_for_act if name_for_act else "ХХ"}{data.id if data.id >= 10 else '0' + str(data.id)} {data.title if data.title else 'НАЗВАНИЕ АКТА'}"
-    
+
     # Начинаем наполнение документа
     add_paragraph(doc, f"Объект: {data.object_name}", bold=True, space_after=0)
     add_paragraph(doc, f"Раздел проекта: {data.project_name}", bold=True, space_after=0)
@@ -95,7 +98,7 @@ def create_docx_file(user_id: int, db: Session = None):
         doc,
         f"Дата составления: {current_date} время: {current_time}\nСоставил инженер СК: ____________________ {current_user_full_name}",
         color=RGBColor(158, 158, 158),
-        space_after=30
+        space_after=30,
     )
 
     heading = doc.add_paragraph()
@@ -103,25 +106,27 @@ def create_docx_file(user_id: int, db: Session = None):
     heading.paragraph_format.space_after = Pt(10)
     heading.paragraph_format.left_indent = Inches(0.7)
     heading.paragraph_format.right_indent = Inches(0.7)
-    
+
     heading_run = heading.add_run("АКТ выявленных недостатков, дефектов и несоответствий работ ")
     heading_run.font.size = Pt(16)
     heading_run.font.bold = True
     heading_run.font.color.rgb = RGBColor(0, 0, 0)
-    
-    heading_run = heading.add_run(f"№{current_datetime.strftime('%d%m')}{name_for_act if name_for_act else 'ХХ'}{data.id if data.id >= 10 else '0' + str(data.id)}")
+
+    heading_run = heading.add_run(
+        f"№{current_datetime.strftime('%d%m')}{name_for_act if name_for_act else 'ХХ'}{data.id if data.id >= 10 else '0' + str(data.id)}"
+    )
     heading_run.font.size = Pt(16)
     heading_run.font.color.rgb = RGBColor(0, 0, 0)
     heading_run.font.bold = True
     heading_run.underline = True
-    
+
     # Добавляем подзаголовок
     add_paragraph(doc, "В результате проведенной проверки установлены следующие нарушения:", space_after=10)
 
     # Добавление данных из объекта
     for item_id, item in data.data_obj.items():
         counter = item_id
-        
+
         for text in item.get("texts"):
             paragraph = doc.add_paragraph(f"{counter}. {text}")
             paragraph.paragraph_format.space_after = Pt(15)
@@ -129,7 +134,7 @@ def create_docx_file(user_id: int, db: Session = None):
         if not item.get("texts"):
             paragraph = doc.add_paragraph(f"{counter}. ")
             paragraph.paragraph_format.space_after = Pt(15)
-        
+
         # Добавление изображений
         for photo in item.get("photos"):
             if Path(photo).exists():
@@ -170,20 +175,20 @@ def create_docx_file(user_id: int, db: Session = None):
                 except Exception as e:
                     paragraph = doc.add_paragraph(f"Ошибка при добавлении фото: {str(e)}")
                     paragraph.paragraph_format.space_after = Pt(15)
-        
+
     # Сохранение документа
     filename = title + ".docx"
     file_path = ACTS_DIR / filename
-    
+
     doc.save(file_path)
 
     # Сохранение пути в базе данных
     if os.path.exists(file_path):
-        
+
         file_path_pdf = convert_docx_to_pdf(str(file_path), "acts/")
         db.query(ItemDB).filter(ItemDB.id == data.id).update({"file_path": str(file_path), "file_path_pdf": str(file_path_pdf)})
         db.commit()
-        
+
         return str(file_path)
     else:
         return None
