@@ -1,10 +1,15 @@
+from pathlib import Path
 from fastapi import FastAPI, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from core.models import ItemDB, Users, SessionLocal
 
 from core.helpers import create_docx_file
+from core.services.google_tasks import add_act_to_registry
+
+import os
 
 app = FastAPI()
 
@@ -90,7 +95,16 @@ def create_act(item: Item, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_item)
 
-    create_docx_file(item.tg_id, db)
+    act_name, _, file_path_pdf = create_docx_file(item.tg_id, db)
+    
+    add_act_to_registry(
+        data={
+            "act_id": act_id,
+            "act_name": act_name,
+            "file_path": file_path_pdf,
+            "description": item.data_obj
+        }
+    )
 
     return db_item
 
@@ -148,3 +162,11 @@ def last_act_id(db: Session = Depends(get_db)):
 def get_file_path(act_id: int, db: Session = Depends(get_db)):
     data_obj = db.query(ItemDB).filter(ItemDB.id == act_id).first()
     return {"file_path": data_obj.file_path, "file_path_pdf": data_obj.file_path_pdf}
+
+
+@app.get("/download/{filename}")
+def download_file(filename: str):    
+    file_path = f"./acts/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='application/octet-stream', filename=filename)
+    return {"error": "Файл не найден"}

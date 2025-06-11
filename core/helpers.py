@@ -80,8 +80,8 @@ def create_docx_file(user_id: int, db: Session = None):
     current_date = current_datetime.strftime("%d/%m/%Y")
     current_time = current_datetime.strftime("%H:%M")
 
-    current_user = db.query(Users).filter(Users.tg_id == user_id).first()
-    current_user_full_name = current_user.full_name
+    current_user = db.query(Users).filter(Users.tg_id == user_id).first()    
+    current_user_full_name = current_user.full_name if current_user else "Тестовый тест"
 
     if current_user_full_name:
         name_for_act = "".join(word[0] for word in current_user_full_name.split()[:2])
@@ -189,6 +189,6 @@ def create_docx_file(user_id: int, db: Session = None):
         db.query(ItemDB).filter(ItemDB.id == data.id).update({"file_path": str(file_path), "file_path_pdf": str(file_path_pdf)})
         db.commit()
 
-        return str(file_path)
+        return title, str(file_path), str(file_path_pdf)
     else:
         return None

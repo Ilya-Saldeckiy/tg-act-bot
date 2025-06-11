@@ -10,4 +10,7 @@ __pycache__
 *.db
 .env
 db.sqlite3.*
+db.sqlite3.db shm
+db.sqlite3.db wal
 *Zone.Identifier
+credentials.json

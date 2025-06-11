@@ -2,10 +2,9 @@
 FROM python:3.12
 
 # Обновляем apt-get и устанавливаем необходимые пакеты
-RUN apt-get update && apt-get install -y \
-    libreoffice \
-    --fix-missing \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -o Acquire::Retries=3 --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends libreoffice --fix-missing && \
+    rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
