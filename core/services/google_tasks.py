@@ -1,3 +1,4 @@
+import os
 import gspread
 from gspread.utils import rowcol_to_a1
 from google.oauth2.service_account import Credentials
@@ -24,7 +25,12 @@ def add_act_to_registry(data: dict):
     
     filename = data['file_path'].replace("acts/", "")
     file_path_encoded = quote(filename)
-    file_url = f"http://backend:8000/download/{file_path_encoded}"
+    
+    if os.environ.get("ENVIRONMENT") == "dev":
+        file_url = f"http://127.0.0.1:8000/download/{file_path_encoded}"
+    else:
+        file_url = f"http://{os.environ.get('SERVER_IP')}:8000/download/{file_path_encoded}"
+        
     print('file_url', file_url)
     
     # Подготовка строк описаний
